@@ -4,9 +4,6 @@ import re
 
 # color in output
 class bcolors:
-    HEADER = '\033[95m'
-    OKBLUE = '\033[94m'
-    OKCYAN = '\033[96m'
     PASS = '\033[92m'
     WARNING = '\033[93m'
     FAIL = '\033[91m'
@@ -34,6 +31,14 @@ add_res_header = 'Additional resources'
 
 # recording the files
 filename = "/home/levi/rhel-8-docs/rhel-8/modules/dotnet/con_removed-environment-variables.adoc"
+
+
+
+
+def skip_comments(file):
+    for line in file:
+        if not line.strip().startswith('//'):
+            yield line
 
 
 # abstract tag check
@@ -64,21 +69,29 @@ def abstarct_tag_check(filename):
 
 # additional resources tag check
 def add_res_tag_check(filename):
+    # check if file has related information section
+    add_res_wrong_header = re.findall(r'(?<=\=\=\s)Related information', content, re.IGNORECASE) or re.findall(r'(?<=\.)Related information', content, re.IGNORECASE)
+    # if re;ated infor section is used instead of additional resources section => fail msg
+    if add_res_wrong_header:
+        print(bcolors.FAIL + bcolors.BOLD + "FAIL: 'Related information' section was found. Change the section name to 'Additional resources' in the following files:" + bcolors.ENDC, file.name, sep='\n', end='\n')
     # check if file has additional resources section
-    occurrences_add_res_header = content.count(add_res_header)
-    if occurrences_add_res_header == 1:
+    occurrences_add_res_header = re.findall(r'(?<=\=\=\s)Additional resources', content, re.IGNORECASE) or re.findall(r'(?<=\.)Additional resources', content, re.IGNORECASE)
+    if occurrences_add_res_header:
         # if additional resources section exists
         # check if the additional resources tag is not set
         if content.count(add_res_tag) == 0:
             # if no additional resources tag => fail msg
             print(bcolors.FAIL + bcolors.BOLD + "FAIL: additional resources tag is missing in the found in the following files:" + bcolors.ENDC, file.name, sep='\n', end='\n')
-        else:
-            # if additional resources tag is set
+        # if additional resources tag is set
+        if content.count(add_res_tag) == 1:
             # check if empty line after additional resources tag
             empty_line_after_add_res = re.findall(r'\[role="_additional-resources"]\n(?=\n)', content)
+            empty_line_after_add_res_header = re.findall(r'(?<=\=\=\s)Additional resources\n(?=\n)', content, re.IGNORECASE) or (r'(?<=\.)Additional resources\n(?=\n)', content, re.IGNORECASE)
             # if empty line after additional resources tag => fail msg
             if empty_line_after_add_res:
                 print(bcolors.FAIL + bcolors.BOLD + "FAIL: the following files have an empty line after the additional resources tag:" + bcolors.ENDC, file.name, sep='\n', end='\n')
+            if empty_line_after_add_res_header:
+                print(bcolors.FAIL + bcolors.BOLD + "FAIL: the following files have an empty line after the additional resources header:" + bcolors.ENDC, file.name, sep='\n', end='\n')
 
 
 # vanilla xref check
@@ -89,16 +102,12 @@ def vanilla_check(filename):
         # print(line)
 
 
-
 # open file
 with open(filename, "r") as file:
-    # remove single-line comments
     for line in file:
-        line = line.partition(r'^//.*')[0]
+        line = line.partition('//')[0]
         line = line.rstrip()
-        # read file
         content = file.read()
-
 
 # report abstract tag check
 abstarct_tag_check(filename)
