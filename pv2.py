@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 
 import re
 
@@ -16,36 +16,82 @@ class bcolors:
 
 
 # defining regex
-vanilla_xref = re.compile(r"<<.*>>")
+# abstract_tag = re.compile(r"^\[role\=\"\_abstract\"\]")
+vanilla_xref = re.compile(r'<<.*>>')
 pseudo_vanilla_xref = re.compile(r"<<.* .*>>")
 single_comment = re.compile(r'^//.*$')
 html_markup = re.compile(r'<.*>.*<\/.*>')
+empty_line1 = re.compile(r'\[role=\"_additional-resources\"\](?=\n\n)')
+empty_line = re.compile(r'\[role=\"_additional-resources\"\]\n\n')
 
 
 # defining strings
 abstract_tag = '[role="_abstract"]'
 add_res_tag = '[role="_additional-resources"]'
 exp_tag = ':experimental:'
+# TODO: ignore case
+add_res_header = 'Additional resources'
 
 # recording the files
 filename = "/home/levi/rhel-8-docs/rhel-8/modules/dotnet/con_removed-environment-variables.adoc"
 
 
-def abstarct_tag_check(filename, line):
-    if not abstract_tag.match(line):
-        print(bcolors.FAIL + bcolors.BOLD + "FAIL: abstract tag is missing in the found in the following files" + bcolors.ENDC, filename, sep='\n', end='\n')
-        print(line)
+# abstract tag check
+def abstarct_tag_check(filename):
+    # record occurences of abstract tag
+    occurrences_abstract_tag = content.count(abstract_tag)
+    # check if abstract tag is not set
+    if occurrences_abstract_tag == 0:
+        # if no abstract tag => fail msg
+        print(bcolors.FAIL + bcolors.BOLD + "FAIL: abstract tag is missing in the found in the following files:" + bcolors.ENDC, file.name, sep='\n', end='\n')
+    # check if abstract tag is set once
+    if occurrences_abstract_tag == 1:
+        # check for empty line after abstract tag
+        empty_line_after_abst_tag = re.findall(r'\[role="_abstract"]\n(?=\n)', content)
+        # if empty line after abstract tag => fail msg
+        if empty_line_after_abst_tag:
+            print(bcolors.FAIL + bcolors.BOLD + "FAIL: the following files have an empty line after the abstract tag:" + bcolors.ENDC, file.name, sep='\n', end='\n')
+        else:
+            # check for comments after abstract tag
+            comment_after_abst_tag = re.findall(r'\[role="_abstract"]\n(?=\//|\////)', content)
+            # if comments after abstract tag => fail msg
+            if comment_after_abst_tag:
+                print(bcolors.FAIL + bcolors.BOLD + "FAIL: the following files have comment after the abstract tag:" + bcolors.ENDC, file.name, sep='\n', end='\n')
+    # if abstract tag appears more than once => fail msg
+    if occurrences_abstract_tag > 1:
+        print(bcolors.FAIL + bcolors.BOLD + "FAIL: abstract tag appears multiple times in the following files:" + bcolors.ENDC, file.name, sep='\n', end='\n')
+
+
+# additional resources tag check
+def add_res_tag_check(filename):
+    # check if file has additional resources section
+    occurrences_add_res_header = content.count(add_res_header)
+    if occurrences_add_res_header == 1:
+        # if additional resources section exists
+        # check if the additional resources tag is not set
+        if content.count(add_res_tag) == 0:
+            # if no additional resources tag => fail msg
+            print(bcolors.FAIL + bcolors.BOLD + "FAIL: additional resources tag is missing in the found in the following files:" + bcolors.ENDC, file.name, sep='\n', end='\n')
+        else:
+            # if additional resources tag is set
+            # check if empty line after additional resources tag
+            empty_line_after_add_res = re.findall(r'\[role="_additional-resources"]\n(?=\n)', content)
+            # if empty line after additional resources tag => fail msg
+            if empty_line_after_add_res:
+                print(bcolors.FAIL + bcolors.BOLD + "FAIL: the following files have an empty line after the additional resources tag:" + bcolors.ENDC, file.name, sep='\n', end='\n')
 
 
 # vanilla xref check
 def vanilla_check(filename):
-    if vanilla_xref.match(line) and not pseudo_vanilla_xref.match(line):
-        print(bcolors.FAIL + bcolors.BOLD + "FAIL: vanilla xrefs found in the following files" + bcolors.ENDC, filename, sep='\n', end='\n')
-        print(line)
+    vanilla = re.findall(vanilla_xref, line) and not re.findall(pseudo_vanilla_xref, line)
+    if vanilla:
+        print(bcolors.FAIL + bcolors.BOLD + "FAIL: vanilla xrefs found in the following files:" + bcolors.ENDC, file.name, vanilla_xref.findall(line)[0], sep='\n', end='\n')
+        # print(line)
+
 
 
 # open file
-with open(filename) as file:
+with open(filename, "r") as file:
     # remove single-line comments
     for line in file:
         line = line.partition(r'^//.*')[0]
@@ -53,9 +99,14 @@ with open(filename) as file:
         # read file
         content = file.read()
 
-# report vanilla xrefs
+
+# report abstract tag check
+abstarct_tag_check(filename)
+
+
+# report vanilla xrefs check
 for line in content.splitlines():
     vanilla_check(filename)
 
-matches = re.findall(html_markup, line)
-print(matches)
+# report additional resources tag check
+add_res_tag_check(filename)
