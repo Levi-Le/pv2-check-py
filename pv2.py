@@ -24,6 +24,7 @@ single_comment = re.compile(r'^//.*$')
 html_markup = re.compile(r'<.*>.*<\/.*>')
 empty_line1 = re.compile(r'\[role=\"_additional-resources\"\](?=\n\n)')
 empty_line = re.compile(r'\[role=\"_additional-resources\"\]\n\n')
+inline_anchor = re.compile(r'=.*\[\[.*\]\]')
 
 
 ######################################################################################
@@ -37,6 +38,7 @@ add_res_header = 'Additional resources'
 ######################################################################################
 # recording the files
 filename = "/home/levi/rhel-8-docs/rhel-8/modules/dotnet/con_removed-environment-variables.adoc"
+yml_file = 'pantheon2.yml'
 
 # CHECKS
 ######################################################################################
@@ -66,7 +68,7 @@ def abstarct_tag_check(some_file):
 
 ######################################################################################
 # additional resources tag check
-def add_res_tag_check(filename):
+def add_res_tag_check(some_file):
     # check if file has related information section
     add_res_wrong_header = re.findall(r'(?<=\=\=\s)Related information', content, re.IGNORECASE) or re.findall(r'(?<=\.)Related information', content, re.IGNORECASE)
     # if related infor section is used instead of additional resources section => fail msg
@@ -103,11 +105,20 @@ def add_res_tag_check(filename):
 
 ######################################################################################
 #  FIXME: vanilla xref check
-def vanilla_check(filename):
+def vanilla_check(some_file):
     # check if file has related information section
     vanilla = re.findall(vanilla_xref, content)
     if vanilla:
         print(bcolors.FAIL + bcolors.BOLD + "FAIL: vanilla xrefs found in the following files:" + bcolors.ENDC, file.name, re.findall(vanilla_xref, content), sep='\n', end='\n')
+
+
+######################################################################################
+# in-line anchor check
+def inline_anchor_check(some_file):
+    # check if file has in-line anchors
+    anchor = re.findall(inline_anchor, content)
+    if anchor:
+        print(bcolors.FAIL + bcolors.BOLD + "FAIL: in-line anchors found in the following files:" + bcolors.ENDC, file.name, re.findall(inline_anchor, content), sep='\n', end='\n')
 
 
 ######################################################################################
@@ -137,3 +148,5 @@ vanilla_check(filename)
 
 # report additional resources tag check
 add_res_tag_check(filename)
+
+inline_anchor_check(filename)
