@@ -13,7 +13,7 @@ class bcolors:
     UNDERLINE = '\033[4m'
 
 # TODO: no empty line before abstract tag
-
+# TODO: vars in IDs
 
 ######################################################################################
 # defining regex
@@ -25,6 +25,7 @@ html_markup = re.compile(r'<.*>.*<\/.*>')
 empty_line1 = re.compile(r'\[role=\"_additional-resources\"\](?=\n\n)')
 empty_line = re.compile(r'\[role=\"_additional-resources\"\]\n\n')
 inline_anchor = re.compile(r'=.*\[\[.*\]\]')
+var_in_titles = re.compile(r'(?<!\=)=\s.*{.*}.*')
 
 
 ######################################################################################
@@ -108,6 +109,7 @@ def add_res_tag_check(some_file):
 def vanilla_check(some_file):
     # check if file has related information section
     vanilla = re.findall(vanilla_xref, content)
+    # if vanilla xrefs => fail msg
     if vanilla:
         print(bcolors.FAIL + bcolors.BOLD + "FAIL: vanilla xrefs found in the following files:" + bcolors.ENDC, file.name, re.findall(vanilla_xref, content), sep='\n', end='\n')
 
@@ -117,8 +119,19 @@ def vanilla_check(some_file):
 def inline_anchor_check(some_file):
     # check if file has in-line anchors
     anchor = re.findall(inline_anchor, content)
+# if inline-anchors => fail msg
     if anchor:
         print(bcolors.FAIL + bcolors.BOLD + "FAIL: in-line anchors found in the following files:" + bcolors.ENDC, file.name, re.findall(inline_anchor, content), sep='\n', end='\n')
+
+######################################################################################
+# variable check
+def var_in_title_check(some_file):
+    # check if title has a variable
+    var_title = re.findall(var_in_titles, content)
+    if var_title:
+        print(bcolors.FAIL + bcolors.BOLD + "FAIL: the following files have variable in the titles:" + bcolors.ENDC, file.name, re.findall(var_in_titles, content), sep='\n', end='\n')
+
+
 
 
 ######################################################################################
@@ -141,12 +154,13 @@ with open(filename, "r") as file:
 #  report abstract tag check
 abstarct_tag_check(filename)
 
-
 # report vanilla xrefs check
-
 vanilla_check(filename)
 
 # report additional resources tag check
 add_res_tag_check(filename)
 
+# report inline anchor check
 inline_anchor_check(filename)
+
+var_in_title_check(filename)
