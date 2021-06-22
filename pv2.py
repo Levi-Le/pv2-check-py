@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 
 import re
+import os
 
 filename = "/home/levi/rhel-8-docs/rhel-8/modules/dotnet/con_removed-environment-variables.adoc"
 
@@ -29,8 +30,13 @@ ui_macros = re.compile(r'btn:\[.*\]|menu:.*\]|kbd:.*\]')
 html_markup = re.compile(r'<.*>.*<\/.*>|<.*>\n.*\n</.*>')
 code_blocks = re.compile(r'(?<=\.\.\.\.\n)((.*)\n)*(?=\.\.\.\.)|(?<=----\n)((.*)\n)*(?=----)')
 
-abstract_tag = '[role="_abstract"]'
-experimental_tag = ':experimental:'
+assembly = re.compile(r'assembly_\.*.adoc')
+concept = re.compile(r'con_\.*.adoc')
+procedure = re.compile(r'proc_\.*.adoc')
+reference = re.compile(r'ref_\.*.adoc')
+
+ABSTRACT_TAG = '[role="_abstract"]'
+EXPERIMENTAL_TAG = ':experimental:'
 
 
 def print_fail(message, files):
@@ -65,7 +71,7 @@ def inline_anchor_check(stripped_file, file):
 
 
 def experimental_tag_check(stripped_file, file):
-    occurrences_experimental_tag = stripped_file.count(experimental_tag)
+    occurrences_experimental_tag = stripped_file.count(EXPERIMENTAL_TAG)
     if occurrences_experimental_tag > 0:
         return
     ui_elements = re.findall(ui_macros, stripped_file)
@@ -80,10 +86,17 @@ def html_markup_check(stripped_file, file):
         print_fail("HTML markup is found in the following files", file)
 
 
+def nesting_in_modules_check(original_file, file):
+    name_of_file = os.path.basename(file)
+    var = concept.match(name_of_file)
+    print(name_of_file)
+    print(var)
+
+
 
 def abstarct_tag_check(stripped_file, original_file, file):
     # record occurences of abstract tag
-    occurrences_abstract_tag = stripped_file.count(abstract_tag)
+    occurrences_abstract_tag = stripped_file.count(ABSTRACT_TAG)
     if occurrences_abstract_tag == 0:
         # if no abstract tag => fail msg
         print_fail("abstract tag is missing in the following files", file)
@@ -127,3 +140,4 @@ var_in_title_check(stripped, filename)
 inline_anchor_check(stripped, filename)
 experimental_tag_check(stripped, filename)
 html_markup_check(stripped, filename)
+nesting_in_modules_check(original, filename)
