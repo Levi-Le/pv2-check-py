@@ -2,165 +2,128 @@
 
 import re
 
-######################################################################################
+filename = "/home/levi/rhel-8-docs/rhel-8/modules/dotnet/con_removed-environment-variables.adoc"
+
+
 # color in output
 class bcolors:
-    PASS = '\033[92m'
-    WARNING = '\033[93m'
+    OK = '\033[92m'
+    WARN = '\033[93m'
     FAIL = '\033[91m'
-    ENDC = '\033[0m'
+    END = '\033[0m'
     BOLD = '\033[1m'
     UNDERLINE = '\033[4m'
 
-# TODO: no empty line before abstract tag
-# TODO: vars in IDs
 
-######################################################################################
-# defining regex
-# abstract_tag = re.compile(r"^\[role\=\"\_abstract\"\]")
 vanilla_xref = re.compile(r'<<.*>>')
-pseudo_vanilla_xref = re.compile(r'<<.* .*>>')
-single_comment = re.compile(r'^//.*$')
-html_markup = re.compile(r'<.*>.*<\/.*>')
-empty_line1 = re.compile(r'\[role=\"_additional-resources\"\](?=\n\n)')
-empty_line = re.compile(r'\[role=\"_additional-resources\"\]\n\n')
-inline_anchor = re.compile(r'=.*\[\[.*\]\]')
+pseudo_vanilla_xref = re.compile(r'<<((.*) (.*))*>>')
+multi_line_comments = re.compile(r'(/{4,})(.*\n)*?(/{4,})')
+single_line_comments = re.compile(r'(?<!//)(?<!/)//(?!//).*\n?')
+empty_line_after_abstract = re.compile(r'\[role="_abstract"]\n(?=\n)')
+first_paragraph_renders = re.compile(r'(?<!\n\n)\[role="_abstract"]\n(?!\n)')
+no_empy_line_before_abstract = re.compile(r'(?<!\n\n)\[role="_abstract"]')
+comment_after_abstract = re.compile(r'\[role="_abstract"]\n(?=\//|(/{4,})(.*\n)*?(/{4,}))')
 var_in_titles = re.compile(r'(?<!\=)=\s.*{.*}.*')
+inline_anchor = re.compile(r'=.*\[\[.*\]\]')
+ui_macros = re.compile(r'btn:\[.*\]|menu:.*\]|kbd:.*\]')
+html_markup = re.compile(r'<.*>.*<\/.*>|<.*>\n.*\n</.*>')
+code_blocks = re.compile(r'(?<=\.\.\.\.\n)((.*)\n)*(?=\.\.\.\.)|(?<=----\n)((.*)\n)*(?=----)')
 
-
-######################################################################################
-# defining strings
 abstract_tag = '[role="_abstract"]'
-add_res_tag = '[role="_additional-resources"]'
-exp_tag = ':experimental:'
-add_res_header = 'Additional resources'
+experimental_tag = ':experimental:'
 
 
-######################################################################################
-# recording the files
-filename = "/home/levi/rhel-8-docs/rhel-8/modules/dotnet/con_removed-environment-variables.adoc"
-yml_file = 'pantheon2.yml'
-
-# CHECKS
-######################################################################################
-# abstract tag check
-def abstarct_tag_check(some_file):
-    # record occurences of abstract tag
-    occurrences_abstract_tag = content.count(abstract_tag)
-    # check if abstract tag is not set
-    if occurrences_abstract_tag == 0:
-        # if no abstract tag => fail msg
-        print(bcolors.FAIL + bcolors.BOLD + "FAIL: abstract tag is missing in the following files:" + bcolors.ENDC, file.name, sep='\n', end='\n')
-    # check if abstract tag is set once
-    if occurrences_abstract_tag == 1:
-        # check for empty line after abstract tag
-        empty_line_after_abst_tag = re.findall(r'\[role="_abstract"]\n(?=\n)', original)
-        # if empty line after abstract tag => fail msg
-        if empty_line_after_abst_tag:
-            print(bcolors.FAIL + bcolors.BOLD + "FAIL: the following files have an empty line after the abstract tag:" + bcolors.ENDC, file.name, sep='\n', end='\n')
-        comment_after_abst_tag = re.findall(r'\[role="_abstract"]\n(?=\//|(/{4,})(.*\n)*?(/{4,}))', original)
-        # if comments after abstract tag => fail msg
-        if comment_after_abst_tag:
-            print(bcolors.FAIL + bcolors.BOLD + "FAIL: the following files have comment after the abstract tag:" + bcolors.ENDC, file.name, sep='\n', end='\n')
-    # if abstract tag appears more than once => fail msg
-    if occurrences_abstract_tag > 1:
-        print(bcolors.FAIL + bcolors.BOLD + "FAIL: abstract tag appears multiple times in the following files:" + bcolors.ENDC, file.name, sep='\n', end='\n')
+def print_fail(message, files):
+    print(bcolors.FAIL + bcolors.BOLD + "FAIL: " + message + ":" + bcolors.END, files, sep='\n')
 
 
-######################################################################################
-# additional resources tag check
-def add_res_tag_check(some_file):
+def print_warn(message, files):
+    print(bcolors.WARN + bcolors.BOLD + "WARNING: " + message + ":" + bcolors.END, files, sep='\n')
+
+
+def vanilla_xref_check(stripped_file, file):
     # check if file has related information section
-    add_res_wrong_header = re.findall(r'(?<=\=\=\s)Related information', content, re.IGNORECASE) or re.findall(r'(?<=\.)Related information', content, re.IGNORECASE)
-    # if related infor section is used instead of additional resources section => fail msg
-    if add_res_wrong_header:
-        print(bcolors.FAIL + bcolors.BOLD + "FAIL: 'Related information' section was found. Change the section name to 'Additional resources' in the following files:" + bcolors.ENDC, file.name, sep='\n', end='\n')
-    # check if file has additional resources section
-    occurrences_add_res_header = re.findall(r'(?<=\=\=\s)Additional resources', content, re.IGNORECASE) or re.findall(r'(?<=\.)Additional resources', content, re.IGNORECASE)
-    if occurrences_add_res_header:
-        # if additional resources section exists
-        # check if the additional resources tag is not set
-        if content.count(add_res_tag) == 0:
-            # if no additional resources tag => fail msg
-            print(bcolors.FAIL + bcolors.BOLD + "FAIL: additional resources tag is missing in the found in the following files:" + bcolors.ENDC, file.name, sep='\n', end='\n')
-        # if additional resources tag is set
-        if content.count(add_res_tag) == 1:
-            # check if empty line after additional resources tag
-            empty_line_after_add_res_tag = re.findall(r'\[role="_additional-resources"]\n(?=\n)', original)
-            # if empty line after additional resources tag => fail msg
-            if empty_line_after_add_res_tag:
-                print(bcolors.FAIL + bcolors.BOLD + "FAIL: the following files have an empty line after the additional resources tag:" + bcolors.ENDC, file.name, sep='\n', end='\n')
-            comment_after_add_res_tag = re.findall(r'\[role="_additional-resources"]\n(?=\//|(/{4,})(.*\n)*?(/{4,}))', original)
-            if comment_after_add_res_tag:
-                print(bcolors.FAIL + bcolors.BOLD + "FAIL: the following files have a comment after the additional resources tag:" + bcolors.ENDC, file.name, sep='\n', end='\n')
-            # check if empty line after additional resources header
-            empty_line_after_add_res_header = re.findall(r'(?<=\=\=\s)Additional resources\n(?=\n)|(?<=\.)Additional resources\n(?=\n)', original, re.IGNORECASE)
-            # if empty line after additional resources header => fail msg
-            if empty_line_after_add_res_header:
-                print(bcolors.FAIL + bcolors.BOLD + "FAIL: the following files have an empty line after the additional resources header:" + bcolors.ENDC, file.name, sep='\n', end='\n')
-            comment_after_add_res_header = re.findall(r'(?<=\.)Additional resources\n(?=\//|(/{4,})(.*\n)*?(/{4,}))', original, re.IGNORECASE) or re.findall(r'(?<=\=\=\s)Additional resources\n(?=\//|(/{4,})(.*\n)*?(/{4,}))', original, re.IGNORECASE)
-            if comment_after_add_res_header:
-                print(bcolors.FAIL + bcolors.BOLD + "FAIL: the following files have a comment after the additional resources header:" + bcolors.ENDC, file.name, sep='\n', end='\n')
-
-
-
-######################################################################################
-#  FIXME: vanilla xref check
-def vanilla_check(some_file):
-    # check if file has related information section
-    vanilla = re.findall(vanilla_xref, content)
+    vanilla = re.findall(vanilla_xref, stripped_file)
     # if vanilla xrefs => fail msg
     if vanilla:
-        print(bcolors.FAIL + bcolors.BOLD + "FAIL: vanilla xrefs found in the following files:" + bcolors.ENDC, file.name, re.findall(vanilla_xref, content), sep='\n', end='\n')
+        print_fail("vanilla xrefs found in the following files", file)
 
 
-######################################################################################
-# in-line anchor check
-def inline_anchor_check(some_file):
+def var_in_title_check(stripped_file, file):
+    # check if title has a variable
+    var_title = re.findall(var_in_titles, stripped_file)
+    if var_title:
+        print_fail("the following files have variable in the level 1 heading", file)
+
+
+def inline_anchor_check(stripped_file, file):
     # check if file has in-line anchors
-    anchor = re.findall(inline_anchor, content)
+    anchor = re.findall(inline_anchor, stripped_file)
 # if inline-anchors => fail msg
     if anchor:
-        print(bcolors.FAIL + bcolors.BOLD + "FAIL: in-line anchors found in the following files:" + bcolors.ENDC, file.name, re.findall(inline_anchor, content), sep='\n', end='\n')
-
-######################################################################################
-# variable check
-def var_in_title_check(some_file):
-    # check if title has a variable
-    var_title = re.findall(var_in_titles, content)
-    if var_title:
-        print(bcolors.FAIL + bcolors.BOLD + "FAIL: the following files have variable in the titles:" + bcolors.ENDC, file.name, re.findall(var_in_titles, content), sep='\n', end='\n')
+        print_fail("in-line anchors found in the following files", file)
 
 
+def experimental_tag_check(stripped_file, file):
+    occurrences_experimental_tag = stripped_file.count(experimental_tag)
+    if occurrences_experimental_tag > 0:
+        return
+    ui_elements = re.findall(ui_macros, stripped_file)
+    if ui_elements:
+        if occurrences_experimental_tag == 0:
+            print_fail("experimental tag is missing in the following files", file)
 
 
-######################################################################################
+def html_markup_check(stripped_file, file):
+    occurences_html_markup = re.findall(html_markup, stripped_file)
+    if occurences_html_markup:
+        print_fail("HTML markup is found in the following files", file)
+
+
+
+def abstarct_tag_check(stripped_file, original_file, file):
+    # record occurences of abstract tag
+    occurrences_abstract_tag = stripped_file.count(abstract_tag)
+    if occurrences_abstract_tag == 0:
+        # if no abstract tag => fail msg
+        print_fail("abstract tag is missing in the following files", file)
+        return
+    if occurrences_abstract_tag > 1:
+        print_fail("abstract tag appears multiple times in the following files", file)
+        return
+    # check if abstract tag is set once
+    if occurrences_abstract_tag == 1:
+        first_paragraph_check = re.findall(first_paragraph_renders, original_file)
+        if first_paragraph_check:
+            print_fail("there is no line between the level 1 heading and the abstract tag in the following files. the first paragraph might render incorrectly", file)
+            return
+        empty_line_before_abstract_tag = re.findall(no_empy_line_before_abstract, original_file)
+        if empty_line_before_abstract_tag:
+            print_fail("the following files have no empty line before the abstract tag", file)
+        empty_line_after_abstract_tag = re.findall(empty_line_after_abstract, original_file)
+        if empty_line_after_abstract_tag:
+            print_fail("the following files have an empty line after the abstract tag", file)
+            return
+        comment_after_abst_tag = re.findall(comment_after_abstract, original_file)
+        if comment_after_abst_tag:
+            print_fail("the following files have an comment after the abstract tag", file)
+
 #  open file
-with open(filename, "r+") as file:
-    content = file.read()
-    # exclude multi-line comments
-    content = re.sub(r'(/{4,})(.*\n)*?(/{4,})', '', content)
-    # exclude single-line comments
-    content = re.sub(r'(?<!//)(?<!/)//(?!//).*\n?', '', content)
-    # FIXME:
-    # excludes pseudo xrefs
-    content = re.sub(r'<<((.*) (.*))*>>', '', content)
-
 with open(filename, "r") as file:
     original = file.read()
-
-# REPORTS
-######################################################################################
-#  report abstract tag check
-abstarct_tag_check(filename)
+    # exclude multi-line comments
+    stripped = multi_line_comments.sub('', original)
+    # exclude single-line comments
+    stripped = single_line_comments.sub('', stripped)
+    # FIXME:
+    # excludes pseudo xrefs
+    stripped = pseudo_vanilla_xref.sub('', stripped)
+    stripped = code_blocks.sub('', stripped)
 
 # report vanilla xrefs check
-vanilla_check(filename)
-
-# report additional resources tag check
-add_res_tag_check(filename)
-
-# report inline anchor check
-inline_anchor_check(filename)
-
-var_in_title_check(filename)
+vanilla_xref_check(stripped, filename)
+abstarct_tag_check(stripped, original, filename)
+var_in_title_check(stripped, filename)
+inline_anchor_check(stripped, filename)
+experimental_tag_check(stripped, filename)
+html_markup_check(stripped, filename)
