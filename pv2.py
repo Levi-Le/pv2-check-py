@@ -42,6 +42,7 @@ class regex:
     EMPTY_LINE_AFTER_ADD_RES_HEADER = re.compile(r'== Additional resources|\.Additional resources\s\n')
     COMMENT_AFTER_ADD_RES_HEADER = re.compile(r'== Additional resources|\.Additional resources\s(?=\//|(/{4,})(.*\n)*?(/{4,}))')
 
+
 class file_types:
     ASSEMBLY = re.compile(r'assembly_.*\.adoc')
     CONCEPT = re.compile(r'con_.*\.adoc')
@@ -102,6 +103,7 @@ def html_markup_check(stripped_file, file):
     if occurences_html_markup:
         print_fail("HTML markup is found in the following files", file)
 
+
 def nesting_in_assemblies_check(stripped_file, file):
     name_of_file = os.path.basename(file)
     if file_types.ASSEMBLY.fullmatch(name_of_file):
@@ -113,9 +115,7 @@ def nesting_in_assemblies_check(stripped_file, file):
 
 def nesting_in_modules_check(stripped_file, file):
     name_of_file = os.path.basename(file)
-    if file_types.ASSEMBLY.fullmatch(name_of_file):
-        return
-    else:
+    if not file_types.ASSEMBLY.fullmatch(name_of_file):
         if re.findall(regex.NESTED_ASSEMBLY, stripped_file):
             print_fail("the following module contains nested assemblies", file)
         if re.findall(regex.NESTED_MODULES, stripped_file):
@@ -175,9 +175,8 @@ def add_res_section_check(stripped_file, original_file, file):
         if stripped_file.count(tags.ADD_RES) == 1:
             if re.findall(regex.EMPTY_LINE_AFTER_ADD_RES_TAG, original_file):
                 print_fail("the following files have an empty line after the additional resources tag", file)
-            else:
-                if re.findall(regex.COMMENT_AFTER_ADD_RES_TAG, original_file):
-                    print_fail("the following files have comments after the additional resources tag", file)
+            elif re.findall(regex.COMMENT_AFTER_ADD_RES_TAG, original_file):
+                print_fail("the following files have comments after the additional resources tag", file)
             if re.findall(regex.EMPTY_LINE_AFTER_ADD_RES_HEADER, original_file):
                 print_fail("the following files have an empty line after the additional resources header", file)
             else:
@@ -185,26 +184,28 @@ def add_res_section_check(stripped_file, original_file, file):
                     print_fail("the following files have comments after the additional resources header", file)
 
 
-#  open file
-with open(filename, "r") as file:
-    original = file.read()
-    # exclude multi-line comments
-    stripped = regex.MULTI_LINE_COMMENT.sub('', original)
-    # exclude single-line comments
-    stripped = regex.SINGLE_LINE_COMMENT.sub('', stripped)
-    # FIXME:
-    # excludes pseudo xrefs
-    stripped = regex.PSEUDO_VANILLA_XREF.sub('', stripped)
-    stripped = regex.CODE_BLOCK.sub('', stripped)
+def validation(filename):
+    with open(filename, "r") as file:
+        original = file.read()
+        # exclude multi-line comments
+        stripped = regex.MULTI_LINE_COMMENT.sub('', original)
+        # exclude single-line comments
+        stripped = regex.SINGLE_LINE_COMMENT.sub('', stripped)
+        # FIXME:
+        # excludes pseudo xrefs
+        stripped = regex.PSEUDO_VANILLA_XREF.sub('', stripped)
+        stripped = regex.CODE_BLOCK.sub('', stripped)
 
-vanilla_xref_check(stripped, filename)
-abstarct_tag_check(stripped, original, filename)
-var_in_title_check(stripped, filename)
-inline_anchor_check(stripped, filename)
-experimental_tag_check(stripped, filename)
-html_markup_check(stripped, filename)
-# nesting_in_modules_check(original, filename)
-human_readable_label_check(stripped, filename)
-nesting_in_assemblies_check(stripped, filename)
-nesting_in_modules_check(stripped, filename)
-add_res_section_check(stripped, original, filename)
+        experimental_tag_check(stripped, filename)
+        var_in_title_check(stripped, filename)
+        inline_anchor_check(stripped, filename)
+        abstarct_tag_check(stripped, original, filename)
+        nesting_in_assemblies_check(stripped, filename)
+        nesting_in_modules_check(stripped, filename)
+        vanilla_xref_check(stripped, filename)
+        html_markup_check(stripped, filename)
+        human_readable_label_check(stripped, filename)
+        add_res_section_check(stripped, original, filename)
+
+
+validation(filename)
