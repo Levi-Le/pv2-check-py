@@ -67,40 +67,31 @@ def print_warn(message, files):
 
 def vanilla_xref_check(stripped_file, file):
     # check if file has related information section
-    vanilla = re.findall(regex.VANILLA_XREF, stripped_file)
-    # if vanilla xrefs => fail msg
-    if vanilla:
+    if re.findall(regex.VANILLA_XREF, stripped_file):
         print_fail("vanilla xrefs found in the following files", file)
 
 
 def var_in_title_check(stripped_file, file):
     # check if title has a variable
-    var_title = re.findall(regex.VAR_IN_TITLE, stripped_file)
-    if var_title:
+    if re.findall(regex.VAR_IN_TITLE, stripped_file):
         print_fail("the following files have variable in the level 1 heading", file)
 
 
 def inline_anchor_check(stripped_file, file):
     # check if file has in-line anchors
-    anchor = re.findall(regex.INLINE_ANCHOR, stripped_file)
-# if inline-anchors => fail msg
-    if anchor:
+    if re.findall(regex.INLINE_ANCHOR, stripped_file):
         print_fail("in-line anchors found in the following files", file)
 
 
 def experimental_tag_check(stripped_file, file):
-    occurrences_experimental_tag = stripped_file.count(tags.EXPERIMENTAL)
-    if occurrences_experimental_tag > 0:
+    if stripped_file.count(tags.EXPERIMENTAL) > 0:
         return
-    else:
-        ui_elements = re.findall(regex.UI_MACROS, stripped_file)
-        if ui_elements:
+    elif re.findall(regex.UI_MACROS, stripped_file):
             print_fail("experimental tag is missing in the following files", file)
 
 
 def html_markup_check(stripped_file, file):
-    occurences_html_markup = re.findall(regex.HTML_MARKUP, stripped_file)
-    if occurences_html_markup:
+    if re.findall(regex.HTML_MARKUP, stripped_file):
         print_fail("HTML markup is found in the following files", file)
 
 
@@ -164,8 +155,7 @@ def add_res_section_check(stripped_file, original_file, file):
         if file_types.ASSEMBLY.fullmatch(name_of_file):
             if not re.findall(regex.ADD_RES_ASSEMBLY, stripped_file):
                 print_fail("additional resources section for assemblies should be `== Additional resources`", file)
-        else:
-            if not re.findall(regex.ADD_RES_MODULE, stripped_file):
+        elif not re.findall(regex.ADD_RES_MODULE, stripped_file):
                 print_fail("additional resources section for modules should be `.Additional resources`", file)
         if stripped_file.count(tags.ADD_RES) == 0:
             print_fail("additional resources tag is missing in the found in the following files", file)
@@ -179,8 +169,7 @@ def add_res_section_check(stripped_file, original_file, file):
                 print_fail("the following files have comments after the additional resources tag", file)
             if re.findall(regex.EMPTY_LINE_AFTER_ADD_RES_HEADER, original_file):
                 print_fail("the following files have an empty line after the additional resources header", file)
-            else:
-                if re.findall(regex.COMMENT_AFTER_ADD_RES_HEADER, original_file):
+            elif re.findall(regex.COMMENT_AFTER_ADD_RES_HEADER, original_file):
                     print_fail("the following files have comments after the additional resources header", file)
 
 
