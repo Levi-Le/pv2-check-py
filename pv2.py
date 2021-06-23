@@ -132,7 +132,7 @@ def abstarct_tag_check(stripped_file, original_file, file):
         print_fail("the following files have an empty line after the abstract tag", file)
         return
     if re.findall(regex.COMMENT_AFTER_ABSTRACT, original_file):
-            print_fail("the following files have an comment after the abstract tag", file)
+        print_fail("the following files have an comment after the abstract tag", file)
 
 
 def add_res_section_check(stripped_file, original_file, file):
