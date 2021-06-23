@@ -4,6 +4,6 @@ The current test version of the script validates the hardcoded `test-files/proc_
 
 To run the script:
 ----
-$ chmod +x pv2.yml
-$ ./pv2.yml
+$ chmod +x pv2.py
+$ ./pv2.py
 ----
