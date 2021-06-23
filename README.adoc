@@ -1,0 +1,9 @@
+= How-to:
+
+The current test version of the script validates the hardcoded `test-files/proc_some-module.adoc`.
+
+To run the script:
+----
+$ chmod +x pv2.yml
+$ ./pv2.yml
+----
