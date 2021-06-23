@@ -46,8 +46,8 @@ class Regex:
     ADD_RES_MODULE = re.compile(r'\.Additional resources', re.IGNORECASE)
     EMPTY_LINE_AFTER_ADD_RES_TAG = re.compile(r'\[role="_additional-resources"]\n(?=\n)')
     COMMENT_AFTER_ADD_RES_TAG = re.compile(r'\[role="_additional-resources"]\n(?=\//|(/{4,})(.*\n)*?(/{4,}))')
-    EMPTY_LINE_AFTER_ADD_RES_HEADER = re.compile(r'== Additional resources|\.Additional resources\s\n', re.IGNORECASE)
-    COMMENT_AFTER_ADD_RES_HEADER = re.compile(r'== Additional resources\s|\.Additional resources\s(?=\//|(/{4,})(.*\n)*?(/{4,}))', re.IGNORECASE)
+    EMPTY_LINE_AFTER_ADD_RES_HEADER = re.compile(r'== Additional resources\s\n|\.Additional resources\s\n', re.IGNORECASE)
+    COMMENT_AFTER_ADD_RES_HEADER = re.compile(r'\.Additional resources\s(?=\//|(/{4,})(.*\n)*?(/{4,}))|== Additional resources\s(?=\//|(/{4,})(.*\n)*?(/{4,}))', re.IGNORECASE)
 
 
 class FileType:
@@ -72,14 +72,14 @@ class Tags:
 
 def print_fail(message, files):
     '''
-    fail message that gets calld when the check fails
+    fail message that gets called when the check fails
     '''
     print(Colors.FAIL + Colors.BOLD + "FAIL: " + message + ":" + Colors.END, files, sep='\n')
 
 
 def print_warn(message, files):
     '''
-    warning message that gets calld when the check result isn't enough to fail
+    warning message that gets called when the check result isn't enough to fail
     but sufficient to warn the user
     '''
     print(Colors.WARN + Colors.BOLD + "WARNING: " + message + ":" + Colors.END, files, sep='\n')
@@ -197,7 +197,7 @@ def add_res_section_check(stripped_file, original_file, file):
     if FileType.ASSEMBLY.fullmatch(name_of_file):
         if not re.findall(Regex.ADD_RES_ASSEMBLY, stripped_file):
             print_fail("additional resources section for assemblies should be `== Additional resources`", file)
-        elif not re.findall(Regex.ADD_RES_MODULE, stripped_file):
+    elif not re.findall(Regex.ADD_RES_MODULE, stripped_file):
             print_fail("additional resources section for modules should be `.Additional resources`", file)
     if stripped_file.count(Tags.ADD_RES) == 0:
         print_fail("additional resources tag is missing in the found in the following files", file)
