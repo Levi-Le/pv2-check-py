@@ -50,27 +50,23 @@ def print_fail(message, files):
     '''
     fail message that gets called when the check fails
     '''
-    print(Colors.FAIL + Colors.BOLD + "FAIL: " + message + ":" + Colors.END, files, sep='\n')
+    separator = "\n"
+    print(Colors.FAIL + Colors.BOLD + "FAIL: " + message + ":" + Colors.END, separator.join(files), sep='\n')
 
 
-def vanilla_xref_check(stripped_file, files):
+def vanilla_xref_check(stripped_file):
     '''
     checks if the file contains vanilla xrefs
     '''
     if re.findall(Regex.VANILLA_XREF, stripped_file):
-        print_fail("vanilla xrefs found in the following files", files)
+        return True
 
 
-'''
-for subdir, dirs, files in os.walk(r'test-files'):
-    for filename in files:
-        filepath = subdir + os.sep + filename
+def vanilla_xref_report(stripped_file, files, file_path):
+    if vanilla_xref_check(stripped_file):
+        files.append(file_path)
+            print_fail("vanilla xrefs found in the following files", files)
 
-        if filename.startswith("proc_") or filename.startswith("con_") or filename.startswith("ref_") or filename.startswith("assembly_"):
-            print(filepath)
-        else:
-            print("oops")
-'''
 
 folderpath = r"test-files"
 filepaths = [os.path.join(folderpath, name) for name in os.listdir(folderpath)]
@@ -78,6 +74,8 @@ all_files = []
 
 
 def validation(file_name):
+    file_list = []
+
     for path in file_name:
         with open(path, "r") as file:
             original = file.read()
@@ -88,7 +86,7 @@ def validation(file_name):
             stripped = Regex.PSEUDO_VANILLA_XREF.sub('', stripped)
             stripped = Regex.CODE_BLOCK.sub('', stripped)
 
-            vanilla_xref_check(stripped, file_name)
+            vanilla_xref_report(stripped, file_list, path)
 
 
 validation(filepaths)
