@@ -19,7 +19,7 @@ include::con_some-module.adoc[]
 
 .Procedure
 
-. Start each step with an active verb.
+. Start each step with an active verb. <<some>>
 
 . Include one command or action for each step with the exception of simple follow-step, for example:
 .. Do this thing and then select btn:[Next].
@@ -27,7 +27,7 @@ include::con_some-module.adoc[]
 
 . Use an unnumbered bullet (*) if the procedure includes only one step.
 
-<<some>>
+
 ////
 
 <strong>.Verification</strong>
