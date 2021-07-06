@@ -7,7 +7,7 @@ Write a short introductory paragraph that provides an overview of the module. Pr
 
 .Prerequisites
 
-* A bulleted list of conditions that must be satisfied before the user starts following this module <<some-vanilla-xref>>.
+* A bulleted list of conditions that must be satisfied before the user starts following this module
 * You can also link to other modules or assemblies the user must follow before starting this module.
 * Delete the section title and bullets if the module has no prerequisites.
 
@@ -27,6 +27,7 @@ include::con_some-module.adoc[]
 
 . Use an unnumbered bullet (*) if the procedure includes only one step.
 
+<<some>>
 ////
 
 <strong>.Verification</strong>
