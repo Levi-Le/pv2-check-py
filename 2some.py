@@ -70,23 +70,34 @@ def inline_anchor_check(stripped_file):
         return True
 
 
-def report(stripped_file, grouped_files, another_grouped_files, file_path):
+def create_report(report, stripped_file, file_path):
+    if vanilla_xref_check(stripped_file):
+        if not 'vanilla xrefs' in report:
+            report['vanilla xrefs'] = []
+        report['vanilla xrefs'].append(file_path)
+
+    if inline_anchor_check(stripped_file):
+        if not 'in-line anchor' in report:
+            report['in-line anchor'] = []
+        report['in-line anchor'].append(file_path)
+
+
+def print_report(report):
+    for checks, files in report.items():
+        separator = '\n'
+        print_fail(check, "found in the following files", separator.join(files))
+
+
+"""def report(stripped_file, grouped_files, another_grouped_files, file_path):
     if vanilla_xref_check(stripped_file):
         grouped_files.append(file_path)
 
     if inline_anchor_check(stripped_file):
-        another_grouped_files.append(file_path)
+        another_grouped_files.append(file_path)"""
 
 
-def print_report(placeholder, x, y):
-    placeholder = {}
-    placeholder['vanilla xrefs'] = []
-    placeholder['vanilla xrefs'].append(x)
-
-    placeholder['in-line anchor'] = []
-    placeholder['in-line anchor'].append(y)
-
-    for check, files in placeholder.items():
+def print_report(report):
+    for check, files in report.items():
         separator = "\n"
         print_fail(check, " found in the following files", files)
 
@@ -96,9 +107,7 @@ filepaths = [os.path.join(folderpath, name) for name in os.listdir(folderpath)]
 
 
 def validation(file_name):
-    boo = []
-    files_group = []
-    files_group2 = []
+    report = {}
 
     for path in file_name:
         with open(path, "r") as file:
@@ -108,8 +117,8 @@ def validation(file_name):
             # FIXME: figure out a better way to exclude pseudo vanilla xrefs
             stripped = Regex.PSEUDO_VANILLA_XREF.sub('', stripped)
             stripped = Regex.CODE_BLOCK.sub('', stripped)
-            report(stripped, files_group, files_group2, path)
-    print_report(boo, files_group, files_group2)
+            create_report(report, stripped, path)
+    print_report(report)
 
 
 validation(filepaths)
