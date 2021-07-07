@@ -17,9 +17,8 @@ class Colors:
 
 
 class Regex:
-    '''
-    defines regular expresiions for the checks
-    '''
+    """defines regular expresiions for the checks."""
+
     VANILLA_XREF = re.compile(r'<<.*>>')
     PSEUDO_VANILLA_XREF = re.compile(r'<<((.*) (.*))*>>')
     MULTI_LINE_COMMENT = re.compile(r'(/{4,})(.*\n)*?(/{4,})')
@@ -52,30 +51,44 @@ def print_fail(check, message, files):
     '''
     separator = '\n'
     if files:
-        print(Colors.FAIL + Colors.BOLD + "FAIL: " + check + message + ":" + Colors.END, separator.join(files), sep='\n')
+        print(Colors.FAIL + Colors.BOLD + "FAIL: " + check + message + ":" + Colors.END, files, sep='\n')
 
 
-def vanilla_xref_check(stripped_file, file):
+def vanilla_xref_check(stripped_file):
     '''
     checks if the file contains vanilla xrefs
     '''
     if re.findall(Regex.VANILLA_XREF, stripped_file):
         #print_fail("vanilla xrefs found in the following files", file_path)
-        return file
+        return True
+
+def inline_anchor_check(stripped_file):
+    '''
+    checks if the in-line anchor directly follows the level 1 heading
+    '''
+    if re.findall(Regex.INLINE_ANCHOR, stripped_file):
+        return True
 
 
-'''def report(stripped_file, grouped_files, file_path):
+def report(stripped_file, grouped_files, another_grouped_files, file_path):
     if vanilla_xref_check(stripped_file):
-        grouped_files.append(file_path)'''
+        grouped_files.append(file_path)
+
+    if inline_anchor_check(stripped_file):
+        another_grouped_files.append(file_path)
 
 
-def print_report(placeholder):
+def print_report(placeholder, x, y):
     placeholder = {}
-    placeholder['vanilla xref'] = []
-    placeholder['vanilla xref'].append('bar')
+    placeholder['vanilla xrefs'] = []
+    placeholder['vanilla xrefs'].append(x)
 
-    for test, files in placeholder.items():
-        print_fail(test, "found in the following files", files)
+    placeholder['in-line anchor'] = []
+    placeholder['in-line anchor'].append(y)
+
+    for check, files in placeholder.items():
+        separator = "\n"
+        print_fail(check, " found in the following files", files)
 
 
 folderpath = r"test-files"
@@ -84,6 +97,8 @@ filepaths = [os.path.join(folderpath, name) for name in os.listdir(folderpath)]
 
 def validation(file_name):
     boo = []
+    files_group = []
+    files_group2 = []
 
     for path in file_name:
         with open(path, "r") as file:
@@ -93,8 +108,8 @@ def validation(file_name):
             # FIXME: figure out a better way to exclude pseudo vanilla xrefs
             stripped = Regex.PSEUDO_VANILLA_XREF.sub('', stripped)
             stripped = Regex.CODE_BLOCK.sub('', stripped)
-            vanilla_xref_check(stripped, boo)
-    print_report(boo)
+            report(stripped, files_group, files_group2, path)
+    print_report(boo, files_group, files_group2)
 
 
 validation(filepaths)
