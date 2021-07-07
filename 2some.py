@@ -46,27 +46,36 @@ class Regex:
     COMMENT_AFTER_ADD_RES_HEADER = re.compile(r'\.Additional resources\s(?=\//|(/{4,})(.*\n)*?(/{4,}))|== Additional resources\s(?=\//|(/{4,})(.*\n)*?(/{4,}))', re.IGNORECASE)
 
 
-def print_fail(message, files):
+def print_fail(check, message, files):
     '''
     fail message that gets called when the check fails
     '''
     separator = '\n'
     if files:
-        print(Colors.FAIL + Colors.BOLD + "FAIL: " + message + ":" + Colors.END, separator.join(files), sep='\n')
+        print(Colors.FAIL + Colors.BOLD + "FAIL: " + check + message + ":" + Colors.END, separator.join(files), sep='\n')
 
 
-def vanilla_xref_check(stripped_file):
+def vanilla_xref_check(stripped_file, file):
     '''
     checks if the file contains vanilla xrefs
     '''
     if re.findall(Regex.VANILLA_XREF, stripped_file):
         #print_fail("vanilla xrefs found in the following files", file_path)
-        return True
+        return file
 
 
-def report(stripped_file, grouped_files, file_path):
+'''def report(stripped_file, grouped_files, file_path):
     if vanilla_xref_check(stripped_file):
-        grouped_files.append(file_path)
+        grouped_files.append(file_path)'''
+
+
+def print_report(placeholder):
+    placeholder = {}
+    placeholder['vanilla xref'] = []
+    placeholder['vanilla xref'].append('bar')
+
+    for test, files in placeholder.items():
+        print_fail(test, "found in the following files", files)
 
 
 folderpath = r"test-files"
@@ -74,7 +83,7 @@ filepaths = [os.path.join(folderpath, name) for name in os.listdir(folderpath)]
 
 
 def validation(file_name):
-    files_group = []
+    boo = []
 
     for path in file_name:
         with open(path, "r") as file:
@@ -84,9 +93,8 @@ def validation(file_name):
             # FIXME: figure out a better way to exclude pseudo vanilla xrefs
             stripped = Regex.PSEUDO_VANILLA_XREF.sub('', stripped)
             stripped = Regex.CODE_BLOCK.sub('', stripped)
-            report(stripped, files_group, path)
-
-    print_fail("vanilla xrefs found in the following files", files_group)
+            vanilla_xref_check(stripped, boo)
+    print_report(boo)
 
 
 validation(filepaths)
