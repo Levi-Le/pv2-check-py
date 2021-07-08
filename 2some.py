@@ -5,9 +5,8 @@ import os
 
 
 class Colors:
-    '''
-    defines colors to use in the command line output
-    '''
+    """Define colors to use in the command line output."""
+
     OK = '\033[92m'
     WARN = '\033[93m'
     FAIL = '\033[91m'
@@ -16,8 +15,26 @@ class Colors:
     UNDERLINE = '\033[4m'
 
 
+class Tags:
+
+    """Define tags."""
+    ABSTRACT = '[role="_abstract"]'
+    ADD_RES = '[role="_additional-resources"]'
+    EXPERIMENTAL = ':experimental:'
+    LVLOFFSET = ':leveloffset:'
+
+
+class FileType:
+    """Define strings for finding out fily type."""
+
+    ASSEMBLY = re.compile(r'assembly_.*\.adoc')
+    CONCEPT = re.compile(r'con_.*\.adoc')
+    PROCEDURE = re.compile(r'proc_.*\.adoc')
+    REFERENCE = re.compile(r'ref_.*\.adoc')
+
+
 class Regex:
-    """defines regular expresiions for the checks."""
+    """Define regular expresiions for the checks."""
 
     VANILLA_XREF = re.compile(r'<<.*>>')
     PSEUDO_VANILLA_XREF = re.compile(r'<<((.*) (.*))*>>')
@@ -45,52 +62,128 @@ class Regex:
     COMMENT_AFTER_ADD_RES_HEADER = re.compile(r'\.Additional resources\s(?=\//|(/{4,})(.*\n)*?(/{4,}))|== Additional resources\s(?=\//|(/{4,})(.*\n)*?(/{4,}))', re.IGNORECASE)
 
 
-
 def vanilla_xref_check(stripped_file):
-    '''
-    check if the file contains vanilla xrefs
-    '''
+    """Check if the file contains vanilla xrefs."""
     if re.findall(Regex.VANILLA_XREF, stripped_file):
         return True
 
+
 def inline_anchor_check(stripped_file):
-    '''
-    checs if the in-line anchor directly follows the level 1 heading
-    '''
+    """Check if the in-line anchor directly follows the level 1 heading."""
     if re.findall(Regex.INLINE_ANCHOR, stripped_file):
         return True
 
 
+def var_in_title_check(stripped_file):
+    """Check if the file contains a variable in the level 1 heading."""
+    if re.findall(Regex.VAR_IN_TITLE, stripped_file):
+        return True
+
+
+def experimental_tag_check(stripped_file):
+    """Check if the experimental tag is set."""
+    if stripped_file.count(Tags.EXPERIMENTAL) > 0:
+        return
+    elif re.findall(Regex.UI_MACROS, stripped_file):
+        return True
+
+
+def human_readable_label_check(stripped_file):
+    "Check if the human readable label is present."""
+    if re.findall(Regex.HUMAN_READABLE_LABEL_XREF, stripped_file):
+        return True
+
+
+def html_markup_check(stripped_file):
+    """Check if HTML markup is present in the file."""
+    if re.findall(Regex.HTML_MARKUP, stripped_file):
+        return True
+
+
+def nesting_in_modules_check(stripped_file, file_path):
+    """Check if modules contains nested content."""
+    name_of_file = os.path.basename(file_path)
+    if not FileType.ASSEMBLY.fullmatch(name_of_file):
+        if re.findall(Regex.NESTED_ASSEMBLY, stripped_file):
+            return True
+            #print_fail("the following module contains nested assemblies", file)
+        if re.findall(Regex.NESTED_MODULES, stripped_file):
+            return True
+            #print_fail("the following module contains nested modules", file)
+
+
+def nesting_in_assemblies_check(stripped_file, file_path):
+    """Check if file contains nested assemblies."""
+    name_of_file = os.path.basename(file_path)
+    if FileType.ASSEMBLY.fullmatch(name_of_file):
+        if re.findall(Regex.NESTED_ASSEMBLY, stripped_file):
+            return True
+
+
+def lvloffset__check(stripped_file, file_path):
+    """Check if file contains unsupported includes."""
+    if re.findall(Tags.LVLOFFSET, stripped_file):
+        return True
+
+
 class Report():
-    """create and print report. thank u J."""
+    """Create and print report. thank u J."""
+
     def __init__(self):
+        """Create placeholder for problem description."""
         self.report = {}
 
     def create_report(self, category, file_path):
+        """Generate report."""
         if not category in self.report:
             self.report[category] = []
         self.report[category].append(file_path)
 
     def print_report(self):
+        """Print report."""
         separator = "\n"
 
         for category, files in self.report.items():
             print(Colors.FAIL + Colors.BOLD + "FAIL: {} found in the following files:".format(category) + Colors.END)
             print(separator.join(files))
 
+
 def checks(report, stripped_file, file_path):
+    """Run the checks."""
     if vanilla_xref_check(stripped_file):
         report.create_report('vanilla xrefs', file_path)
 
     if inline_anchor_check(stripped_file):
         report.create_report('in-line anchors', file_path)
 
+    if var_in_title_check(stripped_file):
+        report.create_report('variable in the level 1 heading', file_path)
 
-folderpath = r"test-files"
-filepaths = [os.path.join(folderpath, name) for name in os.listdir(folderpath)]
+    if experimental_tag_check(stripped_file):
+        report.create_report('experimental tag not', file_path)
+
+    if html_markup_check(stripped_file):
+        report.create_report('HTML markup', file_path)
+
+    if human_readable_label_check(stripped_file):
+        report.create_report('xrefs without a human readable label', file_path)
+
+    if nesting_in_modules_check(stripped_file, file_path):
+        report.create_report('there should be no nesting in modules. nesting', file_path)
+
+    if nesting_in_assemblies_check(stripped_file, file_path):
+        report.create_report('there should be no nesting in assemblies. nesting', file_path)
+
+    if lvloffset__check(stripped_file, file_path):
+        report.create_report('unsupported use of :leveloffset:. unsupported includes', file_path)
+
+
+FOLDERPATH = r"test-files"
+filepaths = [os.path.join(FOLDERPATH, name) for name in os.listdir(FOLDERPATH)]
 
 
 def validation(file_name):
+    """Validate files."""
     report = Report()
 
     for path in file_name:
