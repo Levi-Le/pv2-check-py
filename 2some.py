@@ -120,9 +120,21 @@ def nesting_in_assemblies_check(stripped_file, file_path):
             return True
 
 
-def lvloffset__check(stripped_file, file_path):
+def lvloffset_check(stripped_file):
     """Check if file contains unsupported includes."""
     if re.findall(Tags.LVLOFFSET, stripped_file):
+        return True
+
+
+def abstarct_tag_none_or_multiple_check(stripped_file):
+    """Checks if the abstract tag is not set or set more than once."""
+    if stripped_file.count(Tags.ABSTRACT) != 1:
+        return True
+
+
+def abstract_tag_check(original_file):
+    """Checks if the abstract tag is set once."""
+    if original_file.count(Tags.ABSTRACT) == 1:
         return True
 
 
@@ -148,7 +160,7 @@ class Report():
             print(separator.join(files))
 
 
-def checks(report, stripped_file, file_path):
+def checks(report, stripped_file, original_file, file_path):
     """Run the checks."""
     if vanilla_xref_check(stripped_file):
         report.create_report('vanilla xrefs', file_path)
@@ -174,8 +186,24 @@ def checks(report, stripped_file, file_path):
     if nesting_in_assemblies_check(stripped_file, file_path):
         report.create_report('there should be no nesting in assemblies. nesting', file_path)
 
-    if lvloffset__check(stripped_file, file_path):
+    if lvloffset_check(stripped_file):
         report.create_report('unsupported use of :leveloffset:. unsupported includes', file_path)
+
+    if abstarct_tag_none_or_multiple_check(stripped_file):
+        if stripped_file.count(Tags.ABSTRACT) == 0:
+            report.create_report('abstract tag not', file_path)
+        else:
+            report.create_report('multiple abstract tags', file_path)
+
+    if abstract_tag_check(original_file):
+        if re.findall(Regex.FIRST_PARA, original_file):
+            report.create_report('the first paragraph might render incorrectly. line between the level 1 heading and the abstract tag not', file_path)
+        if re.findall(Regex.NO_EMPTY_LINE_BEFORE_ABSTRACT, original_file):
+            report.create_report('empty line before the abstract tag not', file_path)
+        if re.findall(Regex.EMPTY_LINE_AFTER_ABSTRACT, original_file):
+            report.create_report('empty line after the abstract tag', file_path)
+        if re.findall(Regex.COMMENT_AFTER_ABSTRACT, original_file):
+            report.create_report('comment after the abstract tag', file_path)
 
 
 FOLDERPATH = r"test-files"
@@ -194,7 +222,7 @@ def validation(file_name):
             # FIXME: figure out a better way to exclude pseudo vanilla xrefs
             stripped = Regex.PSEUDO_VANILLA_XREF.sub('', stripped)
             stripped = Regex.CODE_BLOCK.sub('', stripped)
-            checks(report, stripped, path)
+            checks(report, stripped, original, path)
     report.print_report()
 
 
