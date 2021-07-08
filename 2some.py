@@ -45,61 +45,45 @@ class Regex:
     COMMENT_AFTER_ADD_RES_HEADER = re.compile(r'\.Additional resources\s(?=\//|(/{4,})(.*\n)*?(/{4,}))|== Additional resources\s(?=\//|(/{4,})(.*\n)*?(/{4,}))', re.IGNORECASE)
 
 
-def print_fail(check, message, files):
-    '''
-    fail message that gets called when the check fails
-    '''
-    separator = '\n'
-    if files:
-        print(Colors.FAIL + Colors.BOLD + "FAIL: " + check + message + ":" + Colors.END, files, sep='\n')
-
 
 def vanilla_xref_check(stripped_file):
     '''
-    checks if the file contains vanilla xrefs
+    check if the file contains vanilla xrefs
     '''
     if re.findall(Regex.VANILLA_XREF, stripped_file):
-        #print_fail("vanilla xrefs found in the following files", file_path)
         return True
 
 def inline_anchor_check(stripped_file):
     '''
-    checks if the in-line anchor directly follows the level 1 heading
+    checs if the in-line anchor directly follows the level 1 heading
     '''
     if re.findall(Regex.INLINE_ANCHOR, stripped_file):
         return True
 
 
-def create_report(report, stripped_file, file_path):
-    if vanilla_xref_check(stripped_file):
-        if not 'vanilla xrefs' in report:
-            report['vanilla xrefs'] = []
-        report['vanilla xrefs'].append(file_path)
+class Report():
+    """create and print report. thank u J."""
+    def __init__(self):
+        self.report = {}
 
-    if inline_anchor_check(stripped_file):
-        if not 'in-line anchor' in report:
-            report['in-line anchor'] = []
-        report['in-line anchor'].append(file_path)
+    def create_report(self, category, file_path):
+        if not category in self.report:
+            self.report[category] = []
+        self.report[category].append(file_path)
 
-
-def print_report(report):
-    for checks, files in report.items():
-        separator = '\n'
-        print_fail(check, "found in the following files", separator.join(files))
-
-
-"""def report(stripped_file, grouped_files, another_grouped_files, file_path):
-    if vanilla_xref_check(stripped_file):
-        grouped_files.append(file_path)
-
-    if inline_anchor_check(stripped_file):
-        another_grouped_files.append(file_path)"""
-
-
-def print_report(report):
-    for check, files in report.items():
+    def print_report(self):
         separator = "\n"
-        print_fail(check, " found in the following files", files)
+
+        for category, files in self.report.items():
+            print(Colors.FAIL + Colors.BOLD + "FAIL: {} found in the following files:".format(category) + Colors.END)
+            print(separator.join(files))
+
+def checks(report, stripped_file, file_path):
+    if vanilla_xref_check(stripped_file):
+        report.create_report('vanilla xrefs', file_path)
+
+    if inline_anchor_check(stripped_file):
+        report.create_report('in-line anchors', file_path)
 
 
 folderpath = r"test-files"
@@ -107,7 +91,7 @@ filepaths = [os.path.join(folderpath, name) for name in os.listdir(folderpath)]
 
 
 def validation(file_name):
-    report = {}
+    report = Report()
 
     for path in file_name:
         with open(path, "r") as file:
@@ -117,8 +101,8 @@ def validation(file_name):
             # FIXME: figure out a better way to exclude pseudo vanilla xrefs
             stripped = Regex.PSEUDO_VANILLA_XREF.sub('', stripped)
             stripped = Regex.CODE_BLOCK.sub('', stripped)
-            create_report(report, stripped, path)
-    print_report(report)
+            checks(report, stripped, path)
+    report.print_report()
 
 
 validation(filepaths)
